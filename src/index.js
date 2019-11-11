@@ -1,6 +1,6 @@
 export { run } from './runtime'
 export { union } from './union'
-export { batchEffects } from './effects'
+export { batchEffects, batch } from './effects'
 
 /**
  * Make types available to programs that use them.
