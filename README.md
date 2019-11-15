@@ -33,7 +33,7 @@ After installing, you can import the `run`, `union` and `batchEffects` functions
 @composi/core run creates a runtime for Redux-style state management for functional components. To use it, you do need to import it:
 
 ```javascript
-import { run } from '@composi/core'
+import { run } from '@composi/runtime'
 ```
 
 Run takes one argument, the program to run. This is where it gets interesting. A program has five methods. The first three are required, the last two are optional:
