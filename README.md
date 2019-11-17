@@ -6,11 +6,14 @@
 
  1. [Introduction](#Introduction)
  2. [Installation](#Installation)
- 3. [run](#run)
- 4. [union](#union)
- 5. [batchEffects](#batchEffects)
- 6. [CDN](#CDN)
- 7. [Summary](#Summary)
+ 3. [Run](#run)
+ 4. [Default Program](#Default-Program)
+ 5. [Subscriptions](#Subscriptions)
+ 6. [Done](#Done)
+ 7. [Union](#union)
+ 8. [Batch](#batch)
+ 9. [CDN](#CDN)
+10. [Summary](#Summary)
 
 ## Introduction
 
@@ -46,11 +49,13 @@ Run takes one argument, the program to run. This is where it gets interesting. A
 
 Init is a function that returns the program's state and optionally an effect to run at startup. That's why its called init.
 
-Update is like a Redux reducer. It executes various actions conditionally. The can modify and return the programs state. When it returns the state, it gets passed to the view.
+View is a function that can return a presentation of the program state. This is where you would use a renderer to output a component.
 
-View is a function that can return some kind of presentation of the state. This is where you would use render to output a functional component.
+Update is like a Redux reducer. It executes various actions conditionally. They can modify and return the program's state. When it returns the state, it gets passed to the view.
 
-With `init`, `view` and `update` you have everything you need to make a valid program that you can run:
+## Default Program
+
+With `init`, `view` and `update` you have everything you need to make a valid program that you can run. Below is the basic structure of a runtime program:
 
 
 ```javascript
@@ -63,10 +68,11 @@ const program = {
 }
 run(program)
 ```
-## Subsciptions
+## Subscriptions
 
-Subscriptions is an optional method that contains effects to run when the program starts. Using @composi/core's `batchEffects` function it is possible to run more than one effect at the same time, say, start a timer and fetch data at the same time. Subscriptions is optional. In fact, it's just a more convenient and explicit way of running an effect the same way passing an effect as the second value in `init` is. Many people will feel more comfortable using a dedicated function for subscriptions that simply tagging on an extra value to `init`.
+Subscriptions is an optional method that contains effects to run when the program starts. Using @composi/core's `batch` function it is possible to run more than one effect at the same time, such as starting a timer and fetching data. Subscriptions is optional. Also, its arguments `send` and `getState` are optional as well.
 
+## Done
 Done is an optional method that allows you to do clean when you stop a program, such as stopping timers, animations, etc. When you pass a program to `run`, it returns a function that you can use to stop a program. The following is a simple program that does only one thing--it starts a setInterval. At any time we can stop the program and terminate the interval. Notice how we use `done` to do this.
 
 
@@ -125,8 +131,8 @@ const program = {
     return action(state, msg)
   },
   // Setup subscription:
-  subscriptions(getState, send) {
-    return startLoop(getState, send)
+  subscriptions(send, getState) {
+    return startLoop(send, getState)
   },
   // ADD DONE METHOD FOR EFFECT CLEANUP:
   done() {
@@ -423,23 +429,23 @@ run(program)
 
 As you can see in the above example, tagged unions make the connection between view events and update actions more implicit.
 
-## batchEffects
+## Batch
 
 Sometimes you may need to run several effects at the same time. @composi/runtime provides a way to do this with the function `batchEffects`. To use it, define each effect separated, then provide them to `batchEffects` as arguments. Below we show how to do this with subscriptions:
 
 ```javascript
 // effects/subscriptions.js
-import {batchEffects} from '@composi/core'
+import {batch} from '@composi/core'
 import { addItem, useFetchedData } from '../effects/messages'
 
 // First effect.
-function handleEnterKey(getState, send) {
+function handleEnterKey(send, getState) {
   document.addEventListener('keypress', e => {
     if (e.keyCode === 13) send(addItem())
   })
 }
 // Second effect.
-function getData(getState, send) {
+function getData(send, getState) {
   (async () => {
     const response = await fetch('/src/js/data/state.json')
     /** @type {State} */
@@ -448,8 +454,8 @@ function getData(getState, send) {
   })()
 }
 
-// Combine both effects with batchEffects:
-export const subs = batchEffects(handleEnterKey, getData)
+// Combine both effects with batch:
+export const subs = batch(handleEnterKey, getData)
 ```
 
 Now we can just import `subs`, which is the two effects batched together:
@@ -457,7 +463,7 @@ Now we can just import `subs`, which is the two effects batched together:
 ```javascript
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { run, union, batchEffects } from '@composi/core'
+import { run, union, batch } from '@composi/core'
 import {TodoList} from './components/todo-list'
 import {actions} from './effects/actions'
 import {subs} from './effects/subscriptions'
@@ -472,9 +478,9 @@ const program = {
   update(state, msg, send) {
     return actions(state, msg, send)
   },
-  subscriptions(getState, send) {
+  subscriptions(send, getState) {
     // Use the batched effects here:
-    return subs(getState, send)
+    return subs(send, getState)
   }
 }
 
