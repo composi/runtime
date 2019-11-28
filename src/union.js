@@ -43,6 +43,11 @@ function createUnion(types) {
   let idx = 0
   while (idx < types.length) {
     const type = types[idx]
+    if (type === 'match') {
+      console.error(
+        `The message type you provided was "match". This cannot be used since it would override the message union's own match method. Please change it to something else, such as "matchName", etc.`
+      )
+    }
     variants[type] = data => ({ type, data })
     idx++
   }
