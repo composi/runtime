@@ -2,7 +2,7 @@
  * @typedef {Object<string, any>} Message
  * @prop {string} type
  * @prop {any} [data]
- * @typedef {(msg?: Message) => Message} Send
+ * @typedef {(msg?: Message | Function, data?: any) => Message} Send
  * @typedef {() => State} GetState
  */
 /**
@@ -66,9 +66,13 @@ export function run(program) {
    * @param {Message} message
    *
    */
-  function send(message) {
+  function send(message, data) {
+    let msg = message
     if (isRunning) {
-      return updateView(update(state, message, send))
+      if (typeof message === 'function') {
+        msg = /** @type {Function} */ (message)(data)
+      }
+      return updateView(update(state, msg, send))
     }
   }
 
